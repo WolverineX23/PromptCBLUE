@@ -35,7 +35,6 @@ from transformers import (
     AutoConfig,
     AutoModel,
     AutoTokenizer,
-    AutoTokenizer,
     DataCollatorForSeq2Seq,
     HfArgumentParser,
     Seq2SeqTrainingArguments,
@@ -49,24 +48,23 @@ sys.path.append("./")
 from src.ft_chatglm_ptuning.tokenization_chatglm import ChatGLMTokenizer
 from src.ft_chatglm_ptuning.configuration_chatglm import ChatGLMConfig
 from src.ft_chatglm_ptuning.modeling_chatglm import ChatGLMForConditionalGeneration
-
 from src.ft_chatglm_ptuning.trainer_seq2seq import Seq2SeqTrainer
-
 from src.ft_chatglm_ptuning.arguments import ModelArguments, DataTrainingArguments
 
 logger = logging.getLogger(__name__)
 
 
 def main():
+
+    # 参数解析
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, Seq2SeqTrainingArguments))
+    # 解析 json 文件参数 或 命令行参数
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        # If we pass only one argument to the script and it's the path to a json file,
-        # let's parse it to get our arguments.
         model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
     else:
         model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
-    # Setup logging
+    # 日志配置：日志格式和处理范围
     logging.basicConfig(
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
         datefmt="%m/%d/%Y %H:%M:%S",
@@ -79,32 +77,27 @@ def main():
 
     log_level = training_args.get_process_log_level()
     logger.setLevel(log_level)
-    # datasets.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
 
-    # Log on each process the small summary:
     logger.warning(
         f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
         + f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
     )
     logger.info(f"Training/evaluation parameters {training_args}")
 
-    # Set seed before initializing model.
+    # 设置随机种子：保证实验结果的可重现
     set_seed(training_args.seed)
 
-    # Load dataset
+    # 加载数据集
     data_files = {}
     if data_args.train_file is not None:
         data_files["train"] = data_args.train_file
-        extension = data_args.train_file.split(".")[-1]
     if data_args.validation_file is not None:
         data_files["validation"] = data_args.validation_file
-        extension = data_args.validation_file.split(".")[-1]
     if data_args.test_file is not None:
         data_files["test"] = data_args.test_file
-        extension = data_args.test_file.split(".")[-1]
 
     raw_datasets = load_dataset(
         "json",
@@ -112,7 +105,7 @@ def main():
         cache_dir=model_args.cache_dir,
         use_auth_token=True if model_args.use_auth_token else None,
     )
-    # print("raw_datasets: ", raw_datasets)
+    print("chatGLM_pTuning raw_datasets: ", raw_datasets)
 
     # Load pretrained model and tokenizer
     # config = AutoConfig.from_pretrained(

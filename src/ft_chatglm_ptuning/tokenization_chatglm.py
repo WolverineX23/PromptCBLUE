@@ -351,7 +351,7 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
                 Will truncate by taking into account the special tokens.
             padding_strategy: PaddingStrategy to use for padding.
 
-                - PaddingStrategy.LONGEST Pad to the longest sequence in the batch
+                - PaddingStrategy. THE LONGEST Pad to the longest sequence in the batch
                 - PaddingStrategy.MAX_LENGTH: Pad to the max length (default)
                 - PaddingStrategy.DO_NOT_PAD: Do not pad
                 The tokenizer padding sides are defined in self.padding_side:

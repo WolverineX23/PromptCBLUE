@@ -33,7 +33,7 @@ class ChatGLMConfig(PretrainedConfig):
             Dimension of the "intermediate" (i.e., feed-forward) layer in the Transformer encoder.
         max_sequence_length (`int`, *optional*, defaults to 512):
             The maximum sequence length that this model might ever be used with.
-            Typically set this to something large just in case (e.g., 512 or 1024 or 2048).
+            Typically, set this to something large just in case (e.g., 512 or 1024 or 2048).
         layernorm_epsilon (`float`, *optional*, defaults to 1e-5):
             The epsilon used by the layer normalization layers.
         use_cache (`bool`, *optional*, defaults to `True`):
@@ -41,8 +41,8 @@ class ChatGLMConfig(PretrainedConfig):
         Example:
 
     ```python
-    >>> from configuration_chatglm import ChatGLMConfig
-    >>> from modeling_chatglm import ChatGLMModel
+    >>> from src.ft_chatglm_ptuning.configuration_chatglm import ChatGLMConfig
+    >>> from src.ft_chatglm_ptuning.modeling_chatglm import ChatGLMModel
 
     >>> # Initializing a ChatGLM-6B THUDM/ChatGLM-6B style configuration
     >>> configuration = ChatGLMConfig()
