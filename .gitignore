@@ -2,6 +2,8 @@
 
 .idea/*
 
+base/*
+
 __pycache__/*
 
 catboost_info/*

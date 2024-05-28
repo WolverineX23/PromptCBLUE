@@ -10,7 +10,7 @@
 ```bash
 python src/download_checkpoints.py
 ```
-模型会存放在类似于`./models--THUDM--chatglm-6b/snapshots/a8ede826cf1b62bd3c78bdfb3625c7c5d2048fbd`的路径中，加载模型时候就是采用这个路径。
+模型会存放在类似于`./base/models--THUDM--chatglm-6b/snapshots/a8ede826cf1b62bd3c78bdfb3625c7c5d2048fbd`的路径中，加载模型时候就是采用这个路径。
 
 
 ##  数据
