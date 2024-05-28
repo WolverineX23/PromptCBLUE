@@ -165,17 +165,20 @@ if is_in_notebook():
 
     DEFAULT_PROGRESS_CALLBACK = NotebookProgressCallback
 
+# 检查环境中是否存在 apex 库：确保代码在不支持 apex 的环境中不会因缺少库而失败，同时在支持的环境中能够充分利用 apex 提供的性能优势。
 if is_apex_available():
     from apex import amp
 
 if is_datasets_available():
     import datasets
 
+# 支持在谷歌的 TPU 上运行 pyTorch 模型
 if is_torch_tpu_available(check_device=False):
     import torch_xla.core.xla_model as xm
     import torch_xla.debug.metrics as met
     import torch_xla.distributed.parallel_loader as pl
 
+# 用于大规模训练的 PyTorch 扩展，提供了先进的分布式训练策略
 if is_fairscale_available():
     dep_version_check("fairscale")
     import fairscale
@@ -185,7 +188,7 @@ if is_fairscale_available():
     from fairscale.optim import OSS
     from fairscale.optim.grad_scaler import ShardedGradScaler
 
-
+# 亚马逊 SageMaker 的模型并行库，用于优化和管理在 AWS SageMaker 上的模型并行训练
 if is_sagemaker_mp_enabled():
     import smdistributed.modelparallel.torch as smp
     from smdistributed.modelparallel import __version__ as SMP_VERSION
@@ -196,7 +199,7 @@ if is_sagemaker_mp_enabled():
 else:
     IS_SAGEMAKER_MP_POST_1_10 = False
 
-
+# 由 Hugging Face 提供，用于简化和加速在多种计算环境（CPU, GPU, TPU）上的深度学习模型训练
 skip_first_batches = None
 if is_accelerate_available():
     from accelerate import __version__ as accelerate_version
@@ -205,6 +208,7 @@ if is_accelerate_available():
         from accelerate import skip_first_batches
 
 
+# 一个自动化超参数优化工具库
 if TYPE_CHECKING:
     import optuna
 
@@ -292,9 +296,9 @@ class Trainer:
           original model. This is the model that should be used for the forward pass. For example, under `DeepSpeed`,
           the inner model is wrapped in `DeepSpeed` and then again in `torch.nn.DistributedDataParallel`. If the inner
           model hasn't been wrapped, then `self.model_wrapped` is the same as `self.model`.
-        - **is_model_parallel** -- Whether or not a model has been switched to a model parallel mode (different from
-          data parallelism, this means some of the model layers are split on different GPUs).
-        - **place_model_on_device** -- Whether or not to automatically place the model on the device - it will be set
+        - **is_model_parallel** -- Whether a model has been switched to a model parallel mode (different from
+          data parallelism, this means some model layers are split on different GPUs).
+        - **place_model_on_device** -- Whether to automatically place the model on the device - it will be set
           to `False` if model parallel or deepspeed is used, or if the default
           `TrainingArguments.place_model_on_device` is overridden to return `False` .
         - **is_in_train** -- Whether or not a model is currently running `train` (e.g. when `evaluate` is called while
@@ -1203,7 +1207,7 @@ class Trainer:
     def num_examples(self, dataloader: DataLoader) -> int:
         """
         Helper to get number of samples in a [`~torch.utils.data.DataLoader`] by accessing its dataset. When
-        dataloader.dataset does not exist or has no length, estimates as best it can
+        dataloader. Dataset does not exist or has no length, estimates as best it can
         """
         try:
             dataset = dataloader.dataset
@@ -1255,23 +1259,25 @@ class Trainer:
             self.args.hf_deepspeed_config = HfTrainerDeepSpeedConfig(self.args.deepspeed)
             self.args.hf_deepspeed_config.trainer_config_process(self.args)
 
+    # 超参数优化后端配置
     def _report_to_hp_search(self, trial: Union["optuna.Trial", Dict[str, Any]], step: int, metrics: Dict[str, float]):
         if self.hp_search_backend is None or trial is None:
             return
         self.objective = self.compute_objective(metrics.copy())
-        if self.hp_search_backend == HPSearchBackend.OPTUNA:
+
+        if self.hp_search_backend == HPSearchBackend.OPTUNA:        # Optuna 后端
             import optuna
 
-            trial.report(self.objective, step)
-            if trial.should_prune():
+            trial.report(self.objective, step)      # 上报当前的目标函数值和步数
+            if trial.should_prune():                # 检查是否需要对当前试验进行剪枝（即提前停止不表现好的试验）
                 self.callback_handler.on_train_end(self.args, self.state, self.control)
                 raise optuna.TrialPruned()
-        elif self.hp_search_backend == HPSearchBackend.RAY:
+        elif self.hp_search_backend == HPSearchBackend.RAY:         # Rat Tune 后端
             from ray import tune
 
-            if self.control.should_save:
+            if self.control.should_save:                        # 保存检查点
                 self._tune_save_checkpoint()
-            tune.report(objective=self.objective, **metrics)
+            tune.report(objective=self.objective, **metrics)    # 上报当前的目标函数值和所有指标
 
     def _tune_save_checkpoint(self):
         from ray import tune
@@ -1338,6 +1344,7 @@ class Trainer:
 
         return model
 
+    # 根据模型是否正在训练来调用 Intel Extension for PyTorch (IPEX) 的优化功能，以提高模型在 Intel 架构上的运行效率
     def ipex_optimize_model(self, model, training=False, dtype=torch.float32):
         if not is_ipex_available():
             raise ImportError(
@@ -1347,14 +1354,15 @@ class Trainer:
 
         import intel_extension_for_pytorch as ipex
 
-        if not training:
+        if not training:    # 非训练模式
             model.eval()
             dtype = torch.bfloat16 if not self.is_in_train and self.args.bf16_full_eval else dtype
-            # conv_bn_folding is disabled as it fails in symbolic tracing, resulting in ipex warnings
+            # 使用 IPEX 的 optimize 函数优化模型，设置不进行卷积和批归一化折叠: 在符号追踪中会失败，并可能导致警告。
             model = ipex.optimize(model, dtype=dtype, level="O1", conv_bn_folding=False, inplace=not self.is_in_train)
-        else:
+        else:               # 训练模式
             if not model.training:
                 model.train()
+            # 优化模型和优化器，启用原地优化（inplace=True）
             model, self.optimizer = ipex.optimize(
                 model, dtype=dtype, optimizer=self.optimizer, inplace=True, level="O1"
             )
@@ -2013,7 +2021,7 @@ class Trainer:
 
         logger.info("\n\nTraining completed. Do not forget to share your model on huggingface.co/models =)\n\n")
         if args.load_best_model_at_end and self.state.best_model_checkpoint is not None:
-            # Wait for everyone to get here so we are sur the model has been saved by process 0.
+            # Wait for everyone to get here, so we are sur the model has been saved by process 0.
             if is_torch_tpu_available():
                 xm.rendezvous("load_best_model_at_end")
             elif args.local_rank != -1:
