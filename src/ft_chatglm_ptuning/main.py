@@ -99,15 +99,15 @@ def main():
     if data_args.test_file is not None:
         data_files["test"] = data_args.test_file
 
-    raw_datasets = load_dataset(
-        "json",
-        data_files=data_files,
-        cache_dir=model_args.cache_dir,
-        use_auth_token=True if model_args.use_auth_token else None,
+    raw_datasets = load_dataset(                                        # 加载并缓存数据集
+        "json",                                                         # 根据指定格式解析文件
+        data_files=data_files,                                          # 指定数据集文件的路径
+        cache_dir=model_args.cache_dir,                                 # 指定缓存数据集的目录,以便将来重新使用时加快加载速度 - None
+        use_auth_token=True if model_args.use_auth_token else None,     # 用于需要认证的私有数据集或需要访问受限的数据集 - None
     )
     print("chatGLM_pTuning raw_datasets: ", raw_datasets)
 
-    # Load pretrained model and tokenizer
+    # 加载预训练模型的参数
     # config = AutoConfig.from_pretrained(
     #     model_args.model_name_or_path,
     #     trust_remote_code=True
@@ -119,6 +119,7 @@ def main():
     config.pre_seq_len = model_args.pre_seq_len
     config.prefix_projection = model_args.prefix_projection
 
+    # 配置预训练模型的 tokenizer
     # tokenizer = AutoTokenizer.from_pretrained(
     #     model_args.model_name_or_path,
     #     trust_remote_code=True

@@ -8,6 +8,7 @@ class ModelArguments:
     Arguments pertaining to which model/config/tokenizer we are going to fine-tune from.
     """
 
+    # train.sh 中配置, 加载预训练模型时用到
     model_name_or_path: str = field(
         metadata={"help": "Path to pretrained model or model identifier from huggingface.co/models"}
     )
@@ -20,6 +21,7 @@ class ModelArguments:
     tokenizer_name: Optional[str] = field(
         default=None, metadata={"help": "Pretrained tokenizer name or path if not the same as model_name"}
     )
+    # load_dataset 时用到 - None
     cache_dir: Optional[str] = field(
         default=None,
         metadata={"help": "Where to store the pretrained models downloaded from huggingface.co"},
@@ -32,6 +34,7 @@ class ModelArguments:
         default="main",
         metadata={"help": "The specific model version to use (can be a branch name, tag name or commit id)."},
     )
+    # load_dataset 时用到 - None
     use_auth_token: bool = field(
         default=False,
         metadata={
@@ -50,12 +53,15 @@ class ModelArguments:
             )
         },
     )
+    # 参数配置类中 初始化配置
     quantization_bit: Optional[int] = field(
         default=None
     )
+    # train.sh 中配置, 加载预训练模型时用到
     pre_seq_len: Optional[int] = field(
         default=None
     )
+    # 参数配置类中 初始化配置
     prefix_projection: bool = field(
         default=False
     )
@@ -75,10 +81,12 @@ class DataTrainingArguments:
     dataset_config_name: Optional[str] = field(
         default=None, metadata={"help": "The configuration name of the dataset to use (via the datasets library)."}
     )
+    # train.sh 中配置 - input - 数据集中包含全文的列的名称
     prompt_column: Optional[str] = field(
         default=None,
         metadata={"help": "The name of the column in the datasets containing the full texts (for summarization)."},
     )
+    # train.sh 中配置 - target - 数据集中包含结果的列的名称
     response_column: Optional[str] = field(
         default=None,
         metadata={"help": "The name of the column in the datasets containing the summaries (for summarization)."},
@@ -87,9 +95,11 @@ class DataTrainingArguments:
         default=None,
         metadata={"help": "The name of the column in the datasets containing the history of chat."},
     )
+    # train.sh 中配置
     train_file: Optional[str] = field(
         default=None, metadata={"help": "The input training data file (a jsonlines or csv file)."}
     )
+    # train.sh 中配置
     validation_file: Optional[str] = field(
         default=None,
         metadata={
@@ -98,12 +108,14 @@ class DataTrainingArguments:
             )
         },
     )
+    # evaluate.sh 中配置
     test_file: Optional[str] = field(
         default=None,
         metadata={
             "help": "An optional input test data file to evaluate the metrics (rouge) on (a jsonlines or csv file)."
         },
     )
+    # train.sh 中配置
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
@@ -111,21 +123,23 @@ class DataTrainingArguments:
         default=None,
         metadata={"help": "The number of processes to use for the preprocessing."},
     )
+    # train.sh 中配置 - 700 - 标记化后的最大总输入序列长度
     max_source_length: Optional[int] = field(
         default=1024,
         metadata={
             "help": (
-                "The maximum total input sequence length after tokenization. Sequences longer "
-                "than this will be truncated, sequences shorter will be padded."
+                "The maximum total input sequence length after tokenization."
+                "Sequences longer than this will be truncated, sequences shorter will be padded."
             )
         },
     )
+    # train.sh 中配置 - 196 - 标记化后目标文本的最大总序列长度
     max_target_length: Optional[int] = field(
         default=128,
         metadata={
             "help": (
-                "The maximum total sequence length for target text after tokenization. Sequences longer "
-                "than this will be truncated, sequences shorter will be padded."
+                "The maximum total sequence length for target text after tokenization."
+                "Sequences longer than this will be truncated, sequences shorter will be padded."
             )
         },
     )
@@ -145,11 +159,12 @@ class DataTrainingArguments:
         metadata={
             "help": (
                 "Whether to pad all samples to model maximum sentence length. "
-                "If False, will pad the samples dynamically when batching to the maximum length in the batch. More "
-                "efficient on GPU but very bad for TPU."
+                "If False, will pad the samples dynamically when batching to the maximum length in the batch."
+                "More efficient on GPU but very bad for TPU."
             )
         },
     )
+
     max_train_samples: Optional[int] = field(
         default=None,
         metadata={
@@ -177,6 +192,7 @@ class DataTrainingArguments:
             )
         },
     )
+
     num_beams: Optional[int] = field(
         default=None,
         metadata={
