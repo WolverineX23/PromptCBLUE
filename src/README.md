@@ -28,7 +28,12 @@ python src/download_checkpoints.py
 ./src/ft_chatglm_ptuning/train.sh
 
 ```
+Error：若出现 -bash: ./src/ft_chatglm_ptuning/train.sh: Permission denied 错误，需使用`chmod`命令为`train.sh`文件添加执行权限。
+```bash
+chmod +x ./src/ft_chatglm_ptuning/train.sh
 
+```
+这个命令会赋予所有用户执行该脚本的权限。再运行第一行命令运行脚本。
 
 ### 预测(生成回复)
 
