@@ -73,7 +73,7 @@ class ChatGLMConfig(PretrainedConfig):
             position_encoding_2d=True,                              # 二维位置编码
             quantization_bit=0,                                     # 量化位数 - 不进行量化
             pre_seq_len=None,                                       # 前序列长度 - 全序列
-            prefix_projection=False,
+            prefix_projection=False,                                # 前缀投影 - 不使用
             **kwargs
     ):
         self.num_layers = num_layers

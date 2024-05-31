@@ -129,51 +129,52 @@ def main():
         # trust_remote_code=True
     )
 
+    # 加载指定模型的所有权重和配置
+    # model = AutoModel.from_pretrained(
+    #     model_args.model_name_or_path,
+    #     config=config,
+    #     trust_remote_code=True
+    # )
+    model = ChatGLMForConditionalGeneration.from_pretrained(
+        model_args.model_name_or_path,  # 加载 ChatGLMForConditionalGeneration 模型
+        config=config,  # 使用提供的配置 config
+    )
+    # 如果有一个指定的 P-Tuning 检查点路径, 需要加载额外的状态字典
     if model_args.ptuning_checkpoint is not None:
         # Evaluation
         # Loading extra state dict of prefix encoder
 
-        # model = AutoModel.from_pretrained(
-        #     model_args.model_name_or_path,
-        #     config=config,
-        #     trust_remote_code=True
-        # )
-        model = ChatGLMForConditionalGeneration.from_pretrained(
-            model_args.model_name_or_path,
-            config=config,
-        )
+        # 加载 pTuning 模型的状态字典
         prefix_state_dict = torch.load(os.path.join(model_args.ptuning_checkpoint, "pytorch_model.bin"))
+
         new_prefix_state_dict = {}
         for k, v in prefix_state_dict.items():
+            # 对于包含 transformer.prefix_encoder. 前缀的键，去掉该段，重新保存
             if k.startswith("transformer.prefix_encoder."):
                 new_prefix_state_dict[k[len("transformer.prefix_encoder."):]] = v
+        # 将 new_prefix_state_dict 加载到模型的前缀编码器中 - 更新权重, 使其包含从检查点加载的权重
         model.transformer.prefix_encoder.load_state_dict(new_prefix_state_dict)
-    else:
-        # model = AutoModel.from_pretrained(
-        #     model_args.model_name_or_path,
-        #     config=config,
-        #     trust_remote_code=True
-        # )
-        model = ChatGLMForConditionalGeneration.from_pretrained(
-            model_args.model_name_or_path,
-            config=config,
-        )
 
+    # 量化处理
     if model_args.quantization_bit is not None:
         print(f"Quantized to {model_args.quantization_bit} bit")
         model = model.quantize(model_args.quantization_bit)
 
     if model_args.pre_seq_len is not None:
-        # P-tuning v2
+        # P-tuning v2 微调
+        # 将模型的权重转换为半精度浮点数（16位）。这可以减少内存占用，提高计算效率，特别是在使用 GPU 时。
         model = model.half()
+        # 将前缀编码器的权重转换回单精度浮点数（32位）：前缀编码器的权重在半精度浮点数下可能会导致数值不稳定或精度损失，所以需要保持为单精度。
         model.transformer.prefix_encoder.float()
     else:
-        # Finetune
+        # Finetune - 常规微调
+        # 单精度浮点数（32位）: 深度学习模型训练的默认精度，可以提供更高的数值稳定性和精度。
         model = model.float()
 
+    # 源文件前缀
     prefix = data_args.source_prefix if data_args.source_prefix is not None else ""
 
-    # Preprocessing the datasets.
+    # 预处理数据集
     # We need to tokenize inputs and targets.
     if training_args.do_train:
         column_names = raw_datasets["train"].column_names
@@ -185,7 +186,7 @@ def main():
         logger.info("There is nothing to do. Please pass `do_train`, `do_eval` and/or `do_predict`.")
         return
 
-    # Get the column names for input/target.
+    # Get the column names for input/target.  -  train.sh 中显式配置
     prompt_column = data_args.prompt_column
     response_column = data_args.response_column
     history_column = data_args.history_column

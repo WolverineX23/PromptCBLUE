@@ -16,10 +16,11 @@ PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES = {
 }
 
 
+# 基于 SentencePiece 库，包括文本的编码、解码、分词以及在 token 和 id 之间的转换
 class TextTokenizer:
     def __init__(self, model_path):
         self.sp = spm.SentencePieceProcessor()
-        self.sp.Load(model_path)
+        self.sp.Load(model_path)                    # 加载 SentencePiece 模型文件：包含词典、用于将输入文本分割成子词单元的规则和算法
         self.num_tokens = self.sp.vocab_size()
 
     def encode(self, text):
@@ -44,6 +45,8 @@ class TextTokenizer:
         return self.num_tokens
 
 
+# 自定义分词器, 基于 TextTokenizer 类, 并使用 SentencePiece 进行文本的编码、解码和处理.
+# 它还增加了一些特殊的功能, 如处理图像 token、空白字符和制表符
 class SPTokenizer:
     def __init__(
             self,
@@ -53,12 +56,12 @@ class SPTokenizer:
             byte_fallback=True,
     ):
         assert vocab_file is not None
-        self.vocab_file = vocab_file
-        self.num_image_tokens = num_image_tokens
+        self.vocab_file = vocab_file                                    # TextTokenizer 的初始化参数 - SP 模型文件
+        self.num_image_tokens = num_image_tokens                        # 用于图像 token 的数量
         self.special_tokens = ["[MASK]", "[gMASK]", "[sMASK]", "<unused_0>", "<sop>", "<eop>", "<ENC>", "<dBLOCK>"]
-        self.max_blank_length = max_blank_length
-        self.byte_fallback = byte_fallback
-        self.text_tokenizer = TextTokenizer(vocab_file)
+        self.max_blank_length = max_blank_length                        # 最大空白字符长度
+        self.byte_fallback = byte_fallback                              # 是否使用字节回退（未在代码中具体实现）
+        self.text_tokenizer = TextTokenizer(vocab_file)                 # TextTokenizer 对象
 
     def _get_text_tokenizer(self):
         return self.text_tokenizer
@@ -72,14 +75,17 @@ class SPTokenizer:
     def get_tab_token():
         return f"<|tab|>"
 
+    # 返回文本 token 的数量
     @property
     def num_text_tokens(self):
         return self.text_tokenizer.num_tokens
 
+    # 返回总的 token 数量 - 文本 token + 图像 token
     @property
     def num_tokens(self):
         return self.num_image_tokens + self.num_text_tokens
 
+    # 将文本中的制表符替换为指定 token，并将多个空格替换为 <|blank_n|> 形式的 token
     @staticmethod
     def _encode_whitespaces(text: str, max_len: int = 80):
         text = text.replace("\t", SPTokenizer.get_tab_token())
@@ -87,6 +93,7 @@ class SPTokenizer:
             text = text.replace(" " * i, SPTokenizer.get_blank_token(i))
         return text
 
+    # 预处理文本，处理换行符和空白字符
     def _preprocess(self, text: str, linebreak=True, whitespaces=True):
         if linebreak:
             text = text.replace("\n", "<n>")
@@ -94,6 +101,7 @@ class SPTokenizer:
             text = self._encode_whitespaces(text, max_len=self.max_blank_length)
         return text
 
+    # 预处理文本，然后使用 TextTokenizer 进行编码，并将 token ID 加上图像 token 的偏移量
     def encode(
             self, text: str, linebreak=True, whitespaces=True, add_dummy_prefix=True
     ) -> List[int]:
@@ -101,26 +109,30 @@ class SPTokenizer:
         @param text: Text to encode.
         @param linebreak: Whether to encode newline (\n) in text.
         @param whitespaces: Whether to encode multiple whitespaces or tab in text, useful for source code encoding.
-        @param special_tokens: Whether to encode special token ([MASK], [gMASK], etc.) in text.
+        # @param special_tokens: Whether to encode special token ([MASK], [gMASK], etc.) in text.
         @param add_dummy_prefix: Whether to add dummy blank space in the beginning.
         """
         text = self._preprocess(text, linebreak, whitespaces)
         if not add_dummy_prefix:
             text = "<n>" + text
         tmp = self._get_text_tokenizer().encode(text)
-        tokens = [x + self.num_image_tokens for x in tmp]
+        tokens = [x + self.num_image_tokens for x in tmp]               # 将 token ID 加上图像 token 的偏移量
         return tokens if add_dummy_prefix else tokens[2:]
 
+    # 解码重写
     def decode(self, text_ids: List[int]) -> str:
-        ids = [int(_id) - self.num_image_tokens for _id in text_ids]
+        ids = [int(_id) - self.num_image_tokens for _id in text_ids]    # 将 token ID 减去图像 token 的偏移量
         ids = [_id for _id in ids if _id >= 0]
+        # TextTokenizer 解码
         text = self._get_text_tokenizer().decode(ids)
+        # 处理特殊字符：换行符、制表符、空白符
         text = text.replace("<n>", "\n")
         text = text.replace(SPTokenizer.get_tab_token(), "\t")
         for i in range(2, self.max_blank_length + 1):
             text = text.replace(self.get_blank_token(i), " " * i)
         return text
 
+    # 预处理文本，然后使用 TextTokenizer 进行分词
     def tokenize(
             self, text: str, linebreak=True, whitespaces=True, add_dummy_prefix=True
     ) -> List[str]:
@@ -137,6 +149,7 @@ class SPTokenizer:
         tokens = self._get_text_tokenizer().tokenize(text)
         return tokens if add_dummy_prefix else tokens[2:]
 
+    # 根据输入类型（整数或字符串），进行 token 与 ID 之间的转换
     def __getitem__(self, x: Union[int, str]):
         if isinstance(x, int):
             if x < self.num_image_tokens:
@@ -161,7 +174,7 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
             Path to the vocabulary file.
     """
 
-    vocab_files_names = {"vocab_file": "ice_text.model"}
+    vocab_files_names = {"vocab_file": "ice_text.model"}                    # sentencepiece 模型文件
     max_model_input_sizes = PRETRAINED_POSITIONAL_EMBEDDINGS_SIZES
     model_input_names = ["input_ids", "attention_mask", "position_ids"]
 
