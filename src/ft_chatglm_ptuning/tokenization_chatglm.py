@@ -320,6 +320,7 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
 
         return (vocab_file,)
 
+    # 构建模型输入: 通过连接和添加特殊标记, 将一个序列或一对序列转换为模型的输入格式
     def build_inputs_with_special_tokens(
             self, token_ids_0: List[int], token_ids_1: Optional[List[int]] = None
     ) -> List[int]:
@@ -338,10 +339,20 @@ class ChatGLMTokenizer(PreTrainedTokenizer):
 
         Returns:
             `List[int]`: List of [input IDs](../glossary#input-ids) with the appropriate special tokens.
+
+        Example:
+            gmask_id = 50264
+            bos_id = 101
+            eos_id = 102
+            inputs: token_ids_0 = [1, 2, 3], token_ids_1 = [4, 5, 6]
+            output: [1, 2, 3, 50264, 101, 4, 5, 6, 102]
         """
+        #
         gmask_id = self.sp_tokenizer[self.gmask_token]
         eos_id = self.sp_tokenizer[self.eos_token]
+        # 在 token_ids_0 末尾添加 gmask_id 和 bos_id
         token_ids_0 = token_ids_0 + [gmask_id, self.sp_tokenizer[self.bos_token]]
+        # 若存在 token_ids_1, 则 token_ids_0 末尾再添加 token_ids_1 + eos_id
         if token_ids_1 is not None:
             token_ids_0 = token_ids_0 + token_ids_1 + [eos_id]
         return token_ids_0
