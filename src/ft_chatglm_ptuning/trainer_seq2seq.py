@@ -23,8 +23,7 @@ from transformers.deepspeed import is_deepspeed_zero3_enabled
 from transformers.trainer_utils import PredictionOutput
 from transformers.utils import logging
 
-
-from .trainer import Trainer
+from trainer import Trainer
 
 logger = logging.get_logger(__name__)
 
@@ -215,7 +214,7 @@ class Seq2SeqTrainer(Trainer):
         loss = None
 
         if self.args.prediction_loss_only:
-            return (loss, None, None)
+            return loss, None, None
 
         if has_labels:
             labels = inputs["labels"]
@@ -228,7 +227,7 @@ class Seq2SeqTrainer(Trainer):
         else:
             labels = None
 
-        return (loss, generated_tokens, labels)
+        return loss, generated_tokens, labels
 
     def _pad_tensors_to_max_len(self, tensor, max_length):
         if self.tokenizer is not None and hasattr(self.tokenizer, "pad_token_id"):

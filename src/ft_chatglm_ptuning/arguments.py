@@ -119,6 +119,7 @@ class DataTrainingArguments:
     overwrite_cache: bool = field(
         default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
     )
+    # 用于预处理数据集的进程数
     preprocessing_num_workers: Optional[int] = field(
         default=None,
         metadata={"help": "The number of processes to use for the preprocessing."},
@@ -143,6 +144,7 @@ class DataTrainingArguments:
             )
         },
     )
+    # 标记化后验证目标文本的最大总序列长度, 默认为 max_target_length; 还用于覆盖 generation_max_length
     val_max_target_length: Optional[int] = field(
         default=None,
         metadata={
