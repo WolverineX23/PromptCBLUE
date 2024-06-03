@@ -3,8 +3,7 @@ CHECKPOINT="./experiments/outputs/PromptCBLUE-chatglm-6b-pt-128-2e-2"   # 填入
 STEP=10    # 用来评估的模型 checkpoint 是训练了多少步
 
 your_data_path="./datasets/PromptCBLUE/toy_examples/"  # 填入数据集所在的文件夹路径
-model_name_or_path="./models--THUDM--chatglm-6b/snapshots/a8ede826cf1b62bd3c78bdfb3625c7c5d2048fbd"   # LLM 底座模型路径，或者是 huggingface hub 上的模型名称
-
+model_name_or_path="./base/models--THUDM--chatglm-6b/snapshots/8b7d33596d18c5e83e2da052d05ca4db02e60620"   # LLM 底座模型路径，或者是 huggingface hub 上的模型名称
 
 CUDA_VISIBLE_DEVICES=1 python src/ft_chatglm_ptuning/main.py \
     --do_predict \
