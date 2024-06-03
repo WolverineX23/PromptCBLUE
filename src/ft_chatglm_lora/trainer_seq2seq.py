@@ -158,7 +158,7 @@ class Seq2SeqTrainer(Trainer):
                 The dictionary will be unpacked before being fed to the model. Most models expect the targets under the
                 argument `labels`. Check your model's documentation for all accepted arguments.
             prediction_loss_only (`bool`):
-                Whether or not to return the loss only.
+                Whether to return the loss only.
 
         Return:
             Tuple[Optional[float], Optional[torch.Tensor], Optional[torch.Tensor]]: A tuple with the loss, logits and

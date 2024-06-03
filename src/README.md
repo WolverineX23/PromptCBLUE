@@ -55,7 +55,7 @@ chmod +x ./src/ft_chatglm_ptuning/train.sh
 
 ```bash
 
-src/ft_chatglm_lora/train.sh
+./src/ft_chatglm_lora/train.sh
 
 ```
 

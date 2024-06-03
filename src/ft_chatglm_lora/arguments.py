@@ -215,8 +215,6 @@ class DataTrainingArguments:
         },
     )
 
-    
-
     def __post_init__(self):
         if self.dataset_name is None and self.train_file is None and self.validation_file is None and self.test_file is None:
             raise ValueError("Need either a dataset name or a training/validation/test file.")
@@ -229,4 +227,3 @@ class DataTrainingArguments:
                 assert extension in ["csv", "json"], "`validation_file` should be a csv or a json file."
         if self.val_max_target_length is None:
             self.val_max_target_length = self.max_target_length
-
