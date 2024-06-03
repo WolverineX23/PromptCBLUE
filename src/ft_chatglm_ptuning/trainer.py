@@ -1124,7 +1124,8 @@ class Trainer:
             optimizer_cls = Adafactor
             optimizer_kwargs.update({"scale_parameter": False, "relative_step": False})
         elif args.optim == OptimizerNames.ADAMW_HF:
-            from transformers.optimization import AdamW
+            # from transformers.optimization import AdamW
+            from torch.optim import AdamW       # transformers 库中的 AdamW 实现将被弃用的通知, 建议使用 pytorch 自带的 AdamW
 
             optimizer_cls = AdamW
             optimizer_kwargs.update(adam_kwargs)

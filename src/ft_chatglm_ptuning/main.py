@@ -103,7 +103,8 @@ def main():
         "json",                                                         # 根据指定格式解析文件
         data_files=data_files,                                          # 指定数据集文件的路径
         cache_dir=model_args.cache_dir,                                 # 指定缓存数据集的目录,以便将来重新使用时加快加载速度 - None
-        use_auth_token=True if model_args.use_auth_token else None,     # 用于需要认证的私有数据集或需要访问受限的数据集 - None
+        # use_auth_token=True if model_args.use_auth_token else None,     # 用于需要认证的私有数据集或需要访问受限的数据集 - None
+        token=True if model_args.use_auth_token else None,              # use_auth_token 将弃用, token 代替
     )
     print("chatGLM_pTuning raw_datasets: ", raw_datasets)
 
