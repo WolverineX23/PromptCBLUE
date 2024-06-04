@@ -13,6 +13,7 @@ import gc
 import torch
 
 import sys
+
 sys.path.append("./")
 
 import peft
@@ -24,44 +25,46 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--base_model', default=None, required=True,
                     type=str, help="Please specify a base_model")
 parser.add_argument('--lora_model', default=None, required=True,
-                    type=str, help="Please specify LoRA models to be merged (ordered); use commas to separate multiple LoRA models.")
+                    type=str,
+                    help="Please specify LoRA models to be merged (ordered); use commas to separate multiple LoRA models.")
 parser.add_argument('--offload_dir', default=None, type=str,
                     help="(Optional) Please specify a temp folder for offloading (useful for low-RAM machines). Default None (disable offload).")
-parser.add_argument('--output_type', default='pth',choices=['pth','huggingface'], type=str,
+parser.add_argument('--output_type', default='pth', choices=['pth', 'huggingface'], type=str,
                     help="save the merged model in pth or huggingface format.")
 parser.add_argument('--output_dir', default='./', type=str)
 
-
 emb_to_model_size = {
-    4096 : '7B',
-    5120 : '13B',
-    6656 : '30B',
-    8192 : '65B',
+    4096: '7B',
+    5120: '13B',
+    6656: '30B',
+    8192: '65B',
 }
 num_shards_of_models = {'7B': 1, '13B': 2}
 params_of_models = {
     '7B':
         {
-        "dim": 4096,
-        "multiple_of": 256,
-        "n_heads": 32,
-        "n_layers": 32,
-        "norm_eps": 1e-06,
-        "vocab_size": -1,
+            "dim": 4096,
+            "multiple_of": 256,
+            "n_heads": 32,
+            "n_layers": 32,
+            "norm_eps": 1e-06,
+            "vocab_size": -1,
         },
     '13B':
         {
-        "dim": 5120,
-        "multiple_of": 256,
-        "n_heads": 40,
-        "n_layers": 40,
-        "norm_eps": 1e-06,
-        "vocab_size": -1,
+            "dim": 5120,
+            "multiple_of": 256,
+            "n_heads": 40,
+            "n_layers": 40,
+            "norm_eps": 1e-06,
+            "vocab_size": -1,
         },
 }
 
+
 def transpose(weight, fan_in_fan_out):
     return weight.T if fan_in_fan_out else weight
+
 
 # Borrowed and modified from https://github.com/tloen/alpaca-lora
 def translate_state_dict_key(k):
@@ -132,15 +135,15 @@ def save_shards(model_sd, num_shards: int):
                 v = model_sd[k]
                 new_k = translate_state_dict_key(k)
                 if new_k is not None:
-                    if new_k=='tok_embeddings.weight':
+                    if new_k == 'tok_embeddings.weight':
                         print(f"Processing {new_k}")
-                        assert v.size(1)%num_shards==0
-                        splits = v.split(v.size(1)//num_shards,dim=1)
-                    elif new_k=='output.weight':
+                        assert v.size(1) % num_shards == 0
+                        splits = v.split(v.size(1) // num_shards, dim=1)
+                    elif new_k == 'output.weight':
                         print(f"Processing {new_k}")
-                        splits = v.split(v.size(0)//num_shards,dim=0)
+                        splits = v.split(v.size(0) // num_shards, dim=0)
 
-                    elif new_k=='norm.weight':
+                    elif new_k == 'norm.weight':
                         print(f"Processing {new_k}")
                         splits = [v] * num_shards
                     elif 'ffn_norm.weight' in new_k:
@@ -153,51 +156,51 @@ def save_shards(model_sd, num_shards: int):
 
                     elif 'w1.weight' in new_k:
                         print(f"Processing {new_k}")
-                        splits = v.split(v.size(0)//num_shards,dim=0)
+                        splits = v.split(v.size(0) // num_shards, dim=0)
                     elif 'w2.weight' in new_k:
                         print(f"Processing {new_k}")
-                        splits = v.split(v.size(1)//num_shards,dim=1)
+                        splits = v.split(v.size(1) // num_shards, dim=1)
                     elif 'w3.weight' in new_k:
                         print(f"Processing {new_k}")
-                        splits = v.split(v.size(0)//num_shards,dim=0)
+                        splits = v.split(v.size(0) // num_shards, dim=0)
 
 
                     elif 'wo.weight' in new_k:
                         print(f"Processing {new_k}")
-                        splits = v.split(v.size(1)//num_shards,dim=1)
+                        splits = v.split(v.size(1) // num_shards, dim=1)
 
                     elif 'wv.weight' in new_k:
                         print(f"Processing {new_k}")
-                        splits = v.split(v.size(0)//num_shards,dim=0)
+                        splits = v.split(v.size(0) // num_shards, dim=0)
 
                     elif "wq.weight" in new_k or "wk.weight" in new_k:
                         print(f"Processing {new_k}")
                         v = unpermute(v)
-                        splits = v.split(v.size(0)//num_shards,dim=0)
+                        splits = v.split(v.size(0) // num_shards, dim=0)
                     else:
                         print(f"Unexpected key {new_k}")
                         raise ValueError
-                    for sd,split in zip(new_state_dicts,splits):
+                    for sd, split in zip(new_state_dicts, splits):
                         sd[new_k] = split.clone()
                         del split
                     del splits
-                del model_sd[k],v
-                gc.collect()    # Effectively enforce garbage collection
+                del model_sd[k], v
+                gc.collect()  # Effectively enforce garbage collection
 
             os.makedirs(output_dir, exist_ok=True)
-            for i,new_state_dict in enumerate(new_state_dicts):
-                print(f"Saving shard {i+1} of {num_shards} into {output_dir}/consolidated.0{i}.pth")
+            for i, new_state_dict in enumerate(new_state_dicts):
+                print(f"Saving shard {i + 1} of {num_shards} into {output_dir}/consolidated.0{i}.pth")
                 torch.save(new_state_dict, output_dir + f"/consolidated.0{i}.pth")
             with open(output_dir + "/params.json", "w") as f:
                 print(f"Saving params.json into {output_dir}/params.json")
                 json.dump(params, f)
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
 
     args = parser.parse_args()
     base_model_path = args.base_model
-    lora_model_paths = [s.strip() for s in args.lora_model.split(',') if len(s.strip())!=0]
+    lora_model_paths = [s.strip() for s in args.lora_model.split(',') if len(s.strip()) != 0]
     output_dir = args.output_dir
     output_type = args.output_type
     offload_dir = args.offload_dir
@@ -245,7 +248,7 @@ if __name__=='__main__':
         first_weight = base_model.model.layers[0].self_attn.q_proj.weight
         first_weight_old = first_weight.clone()
 
-        if hasattr(peft.LoraModel,'merge_and_unload'):
+        if hasattr(peft.LoraModel, 'merge_and_unload'):
             lora_model = PeftModel.from_pretrained(
                 base_model,
                 lora_model_path,
@@ -258,11 +261,11 @@ if __name__=='__main__':
         else:
             base_model_sd = base_model.state_dict()
             try:
-                lora_model_sd = torch.load(os.path.join(lora_model_path,'adapter_model.bin'),map_location='cpu')
+                lora_model_sd = torch.load(os.path.join(lora_model_path, 'adapter_model.bin'), map_location='cpu')
             except FileNotFoundError:
                 print("Cannot find lora model on the disk. Downloading lora model from hub...")
-                filename = hf_hub_download(repo_id=lora_model_path,filename='adapter_model.bin')
-                lora_model_sd = torch.load(filename,map_location='cpu')
+                filename = hf_hub_download(repo_id=lora_model_path, filename='adapter_model.bin')
+                lora_model_sd = torch.load(filename, map_location='cpu')
 
             lora_config = peft.LoraConfig.from_pretrained(lora_model_path)
             lora_scaling = lora_config.lora_alpha / lora_config.r
@@ -272,32 +275,33 @@ if __name__=='__main__':
 
             for k in non_lora_keys:
                 print(f"merging {k}")
-                original_k = k.replace('base_model.model.','')
+                original_k = k.replace('base_model.model.', '')
                 base_model_sd[original_k].copy_(lora_model_sd[k])
 
             for k in lora_keys:
                 print(f"merging {k}")
-                original_key = k.replace('.lora_A','').replace('base_model.model.','')
+                original_key = k.replace('.lora_A', '').replace('base_model.model.', '')
                 assert original_key in base_model_sd
                 lora_a_key = k
-                lora_b_key = k.replace('lora_A','lora_B')
+                lora_b_key = k.replace('lora_A', 'lora_B')
                 base_model_sd[original_key] += (
-                    transpose(lora_model_sd[lora_b_key].float() @ lora_model_sd[lora_a_key].float(),fan_in_fan_out) * lora_scaling
+                        transpose(lora_model_sd[lora_b_key].float() @ lora_model_sd[lora_a_key].float(),
+                                  fan_in_fan_out) * lora_scaling
                 )
                 assert base_model_sd[original_key].dtype == torch.float16
-    
+
         # did we do anything?
         assert not torch.allclose(first_weight_old, first_weight)
 
     tokenizer.save_pretrained(output_dir)
 
-    if output_type=='huggingface':
+    if output_type == 'huggingface':
         print("Saving to Hugging Face format...")
         LlamaForCausalLM.save_pretrained(
             base_model, output_dir,
             max_shard_size="2GB"
-        ) #, state_dict=deloreanized_sd)
-    else: # output_type=='pth
+        )  # , state_dict=deloreanized_sd)
+    else:  # output_type=='pth
         print("Saving to pth format...")
 
         base_model_sd = base_model.state_dict()

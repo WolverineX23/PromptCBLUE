@@ -37,7 +37,7 @@ import torch
 from datasets import load_dataset, concatenate_datasets
 
 import transformers
-from nltk.translate.bleu_score import sentence_bleu
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_chinese import Rouge
 
 from transformers import (
@@ -62,7 +62,8 @@ from transformers.utils.versions import require_version
 
 from sklearn.metrics import accuracy_score
 
-import  sys
+import sys
+
 sys.path.append("./")
 
 from peft import LoraConfig, TaskType, get_peft_model, PeftModel, get_peft_model_state_dict
@@ -71,16 +72,17 @@ os.environ["WANDB_MODE"] = "disabled"
 
 
 def accuracy(predictions, references, normalize=True, sample_weight=None):
-        return {
-            "accuracy": float(
-                accuracy_score(references, predictions, normalize=normalize, sample_weight=sample_weight)
-            )
-        }
+    return {
+        "accuracy": float(
+            accuracy_score(references, predictions, normalize=normalize, sample_weight=sample_weight)
+        )
+    }
+
 
 # def compute_metrics(eval_preds):
 #     preds, labels = eval_preds
 #     # preds have the same shape as the labels, after the argmax(-1) has been calculated
-#     # by preprocess_logits_for_metrics but we need to shift the labels
+#     # by preprocess_logits_for_metrics, but we need to shift the labels
 #     labels = labels[:, 1:].reshape(-1)
 #     preds = preds[:, :-1].reshape(-1)
 #     return accuracy(predictions=preds, references=labels)
@@ -128,7 +130,7 @@ def fault_tolerance_data_collator(features: List) -> Dict[str, Any]:
                     batch[k] = torch.tensor(np.stack([f[k] for f in features]))
                 else:
                     batch[k] = torch.tensor([f[k] for f in features])
-    except ValueError: # quick fix by simply take the first example
+    except ValueError:  # quick fix by simply take the first example
         for k, v in first.items():
             if k not in ("label", "label_ids") and v is not None and not isinstance(v, str):
                 if isinstance(v, torch.Tensor):
@@ -140,22 +142,25 @@ def fault_tolerance_data_collator(features: List) -> Dict[str, Any]:
 
     return batch
 
+
 class GroupTextsBuilder:
-    def __init__(self,max_seq_length):
+    def __init__(self, max_seq_length):
         self.max_seq_length = max_seq_length
+
     def __call__(self, examples):
         # Concatenate all texts.
-        firsts = {k:examples[k][0][0] for k in examples.keys()}
-        lasts = {k:examples[k][0][-1] for k in examples.keys()}
-        contents = {k:sum([vi[1:-1] for vi in v],[]) for k,v in examples.items()}
+        firsts = {k: examples[k][0][0] for k in examples.keys()}
+        lasts = {k: examples[k][0][-1] for k in examples.keys()}
+        contents = {k: sum([vi[1:-1] for vi in v], []) for k, v in examples.items()}
         total_length = len(contents[list(examples.keys())[0]])
 
         content_length = self.max_seq_length - 2
         if total_length >= content_length:
-            total_length = (total_length // content_length ) * content_length
+            total_length = (total_length // content_length) * content_length
         # Split by chunks of max_len.
         result = {
-            k: [ [firsts[k]] + t[i : i + content_length] + [lasts[k]] for i in range(0, total_length, content_length)] for k, t in contents.items()}
+            k: [[firsts[k]] + t[i: i + content_length] + [lasts[k]] for i in range(0, total_length, content_length)] for
+            k, t in contents.items()}
         return result
 
 
@@ -314,23 +319,24 @@ class DataTrainingArguments:
         if self.streaming:
             require_version("datasets>=2.0.0", "The streaming feature requires `datasets>=2.0.0`")
 
+
 @dataclass
 class MyTrainingArguments(TrainingArguments):
-    trainable : Optional[str] = field(default="q_proj,v_proj")
-    lora_rank : Optional[int] = field(default=8)
-    lora_dropout : Optional[float] = field(default=0.1)
-    lora_alpha : Optional[float] = field(default=32.)
-    modules_to_save : Optional[str] = field(default='embed_tokens,lm_head')
-    debug_mode : Optional[bool] = field(default=False)
-    peft_path : Optional[str] = field(default=None)
-    leraning_rate : Optional[float] = field(default=1e-5)
-    predict_with_generate : Optional[bool] = field(default=False)
+    trainable: Optional[str] = field(default="q_proj,v_proj")
+    lora_rank: Optional[int] = field(default=8)
+    lora_dropout: Optional[float] = field(default=0.1)
+    lora_alpha: Optional[float] = field(default=32.)
+    modules_to_save: Optional[str] = field(default='embed_tokens,lm_head')
+    debug_mode: Optional[bool] = field(default=False)
+    peft_path: Optional[str] = field(default=None)
+    leraning_rate: Optional[float] = field(default=1e-5)
+    predict_with_generate: Optional[bool] = field(default=False)
 
 
 logger = logging.getLogger(__name__)
 
-def main():
 
+def main():
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, MyTrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
         # If we pass only one argument to the script and it's the path to a json file,
@@ -344,10 +350,9 @@ def main():
     send_example_telemetry("run_clm", model_args, data_args)
 
     # Setup logging
-    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",datefmt="%m/%d/%Y %H:%M:%S",
-        level=logging.INFO,  # if training_args.local_rank in [-1, 0] else logging.WARN,
-        handlers=[logging.StreamHandler(sys.stdout)],)
-
+    logging.basicConfig(format="%(asctime)s - %(levelname)s - %(name)s - %(message)s", datefmt="%m/%d/%Y %H:%M:%S",
+                        level=logging.INFO,  # if training_args.local_rank in [-1, 0] else logging.WARN,
+                        handlers=[logging.StreamHandler(sys.stdout)], )
 
     if training_args.should_log:
         # The default of training_args.log_level is passive, so we set log level at info here to have that default.
@@ -443,10 +448,10 @@ def main():
 
         result = tokenizer(text=prompt + answer, add_special_tokens=False)
         result["labels"] = [
-            -100
-        ] * user_prompt_len + result["input_ids"][
-            user_prompt_len:
-        ]
+                               -100
+                           ] * user_prompt_len + result["input_ids"][
+                                                 user_prompt_len:
+                                                 ]
 
         return result
 
@@ -487,13 +492,12 @@ def main():
                 else:
                     t = t + [-100] * (total_length - len(t))
 
-            truncs = [t[i : i + block_size] for i in range(0, total_length, block_size)]
+            truncs = [t[i: i + block_size] for i in range(0, total_length, block_size)]
             result[k] = truncs
 
         # for k in result:
         #     print(k, len(result[k]))
         return result
-
 
     with training_args.main_process_first(desc="dataset map tokenization and grouping"):
         raw_datasets = load_dataset(
@@ -506,28 +510,28 @@ def main():
             use_auth_token=True if model_args.use_auth_token else None,
         )
         tokenized_dataset = raw_datasets.map(
-                    tokenize_function,
-                    batched=False,
-                    num_proc=4,
-                    remove_columns=[prompt_column, response_column, "answer_choices", "task_type", "task_dataset", "sample_id"],
-                    load_from_cache_file=False,
-                    # cache_file_names={k: os.path.join(data_args.dataset_cache_dir, f'tokenized.arrow') for k in raw_datasets},
-                    desc="Running tokenizer on dataset",
-                )
+            tokenize_function,
+            batched=False,
+            num_proc=4,
+            remove_columns=[prompt_column, response_column, "answer_choices", "task_type", "task_dataset", "sample_id"],
+            load_from_cache_file=False,
+            # cache_file_names={k: os.path.join(data_args.dataset_cache_dir, f'tokenized.arrow') for k in raw_datasets},
+            desc="Running tokenizer on dataset",
+        )
         print("tokenized_dataset: ", tokenized_dataset)
         print(tokenized_dataset["train"][3]['input_ids'])
         print(tokenized_dataset["train"][3]['labels'])
 
         tokenized_dataset = tokenized_dataset.map(
-                    group_texts,
-                    batched=True,
-                    batch_size=16,
-                    num_proc=4,
-                    load_from_cache_file=True,
-                    keep_in_memory=False,
-                    # cache_file_names = {k: os.path.join(data_args.dataset_cache_dir, f'grouped.arrow') for k in tokenized_dataset},
-                    desc=f"Grouping texts in chunks of {block_size}",
-                )
+            group_texts,
+            batched=True,
+            batch_size=16,
+            num_proc=4,
+            load_from_cache_file=True,
+            keep_in_memory=False,
+            # cache_file_names = {k: os.path.join(data_args.dataset_cache_dir, f'grouped.arrow') for k in tokenized_dataset},
+            desc=f"Grouping texts in chunks of {block_size}",
+        )
         # tokenized_dataset["test"] = tokenized_dataset["test"].map(
         #     group_texts,
         #     batched=True,
@@ -618,7 +622,7 @@ def main():
     else:
         model = AutoModelForCausalLM.from_config(config)
         n_params = sum({p.data_ptr(): p.numel() for p in model.parameters()}.values())
-        logger.info(f"Training new model from scratch - Total size={n_params/2**20:.2f}M params")
+        logger.info(f"Training new model from scratch - Total size={n_params / 2 ** 20:.2f}M params")
 
     model.resize_token_embeddings(len(tokenizer))
     if training_args.peft_path is not None:
@@ -636,8 +640,8 @@ def main():
         peft_config = LoraConfig(
             task_type=TaskType.CAUSAL_LM,
             target_modules=target_modules,
-            inference_mode=False, 
-            r=lora_rank, lora_alpha=lora_alpha, 
+            inference_mode=False,
+            r=lora_rank, lora_alpha=lora_alpha,
             lora_dropout=lora_dropout,
             modules_to_save=None)
         model = get_peft_model(model, peft_config)

@@ -232,7 +232,7 @@ if __name__ == "__main__":
     loop = asyncio.new_event_loop()
     server = FastAPIServer(loop, vllm_args)
 
-    from uvicorn import Config, Server
+    from uvicorn import Config, Server      # 安装 FastAPI 后, 你通常还需要一个 ASGI 服务器
 
     config = Config(app=app, loop=loop, host='0.0.0.0',
                     port=args.port, log_level="info")
