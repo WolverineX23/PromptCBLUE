@@ -216,7 +216,7 @@ def node_extraction(predict_tree, gold_tree):
     for node1 in predict_node:
         for node2 in gold_node:
             if len(node1['triples']) > 0 and node1['role'] == node2['role'] and node1['logical_rel'] == node2[
-                'logical_rel'] and set(node1['triples']) == set(node2['triples']):
+                    'logical_rel'] and set(node1['triples']) == set(node2['triples']):
                 correct_triplet_num += 1
     return [correct_triplet_num, predict_triplet_num, gold_triplet_num]
 
@@ -229,12 +229,12 @@ def text2dt_eval_single_tree(predict_tree, gold_tree):
             print(node['triples'][i])
             assert len(node['triples'][i]) == 3, "the triple format is wrong"
             node['triples'][i] = (
-            node['triples'][i][0].lower(), node['triples'][i][1].lower(), node['triples'][i][2].lower())
+                node['triples'][i][0].lower(), node['triples'][i][1].lower(), node['triples'][i][2].lower())
     for node in gold_tree:
         for i in range(len(node['triples'])):
             assert len(node['triples'][i]) == 3, "the triple format is wrong"
             node['triples'][i] = (
-            node['triples'][i][0].lower(), node['triples'][i][1].lower(), node['triples'][i][2].lower())
+                node['triples'][i][0].lower(), node['triples'][i][1].lower(), node['triples'][i][2].lower())
 
     # print("step1: ")
     predict_matrix = nodematrix(predict_tree)

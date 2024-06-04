@@ -6,9 +6,8 @@ import sys
 from evaluators import calc_info_extract_task_scores, calc_cls_task_scores, calc_nlg_task_scores, \
     calc_nlg_task_scores_by_sessions, calc_text2dt_task_scores
 
-
 # 错误字典，这里只是示例
-error_msg={
+error_msg = {
     1: "There are missing predictions in the submission, please check again!",
     2: "Predictions are in the wrong format, please check again! ",
     3: "It seems there are missing predictions or the predicted samples are in the wrong order, please check again! ",
@@ -46,13 +45,12 @@ def report_score(score_map, out_p):
 
     # 这里{}里面的score注意保留，但可以增加其他key，比如这样：
     # result['scoreJson'] = {'score': score, 'aaaa': 0.1}
-    #result['scoreJson'] = {'score': score}
+    # result['scoreJson'] = {'score': score}
 
     dump_2_json(result, out_p)
 
 
 def calc_scores(dict_gt, dict_pred, out_path):
-
     scores = {
         "CMeEE-V2": {},
         "CMeIE-V2": {},
@@ -252,7 +250,6 @@ def calc_scores(dict_gt, dict_pred, out_path):
                     "功效作用",
                     "医疗费用",
 
-
                 ]
                 precision, recall, f1 = calc_cls_task_scores(
                     gts,
@@ -421,6 +418,7 @@ def calc_scores(dict_gt, dict_pred, out_path):
     print(score_map)
     return score_map, success_flag
 
+
 if __name__ == "__main__":
 
     '''
@@ -476,8 +474,8 @@ if __name__ == "__main__":
     dict_gt = json.load(
         open(standard_path, "r", encoding="utf-8")
     )
-    #print("dict_pred: ", dict_pred)
-    #print("dict_gt: ", dict_gt)
+    # print("dict_pred: ", dict_pred)
+    # print("dict_gt: ", dict_gt)
 
     if success_flag:
         try:
@@ -497,4 +495,3 @@ if __name__ == "__main__":
             success_flag = 0
             check_code = 99
             report_error_msg(error_msg[check_code], str(e), out_path)
-

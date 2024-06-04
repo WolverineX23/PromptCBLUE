@@ -5,11 +5,11 @@
 import json
 import sys
 
+
 # from tqdm import tqdm
 
 
 def process_generated_results(pred_file):
-
     structured_output = {
         "CMeEE-V2": [],
         "CMeIE-V2": [],
@@ -91,7 +91,7 @@ def process_generated_results(pred_file):
                 for line in list_answer_strs:
                     # print("line: ", line)
                     # 首先是解析出label:
-                    predicate = line.split("关系的头尾实体对")[0][2: ].strip()
+                    predicate = line.split("关系的头尾实体对")[0][2:].strip()
                     # print("predicate: ", predicate)
                     line = line.replace(f"具有{predicate}关系的头尾实体对如下：", "")
 
@@ -109,9 +109,9 @@ def process_generated_results(pred_file):
 
                         list_spos.append(
                             {
-                                 "predicate": predicate,
-                                 "subject": head_mention_str,
-                                 "object": tail_mention_str,
+                                "predicate": predicate,
+                                "subject": head_mention_str,
+                                "object": tail_mention_str,
                             }
                         )
 
@@ -168,10 +168,10 @@ def process_generated_results(pred_file):
                         rel_1 = tail_tuple_str.split("；关系：")[1].split("；关系：")[0]
                         assert rel_1 == "因果关系"
                         tail_triple = {
-                                 "predicate": rel_1,
-                                 "subject": head_ent_1,
-                                 "object": tail_ent_1,
-                            }
+                            "predicate": rel_1,
+                            "subject": head_ent_1,
+                            "object": tail_ent_1,
+                        }
 
                         triple = {
                             "predicate": rel,
@@ -286,7 +286,7 @@ def process_generated_results(pred_file):
                 #                                  字段值有多个，则用 ，符号分隔
                 keys = ["主体词", "发生状态", "描述词", "解剖部位"]
 
-                list_answer_strs = gen_output.split("\n")[1: ]
+                list_answer_strs = gen_output.split("\n")[1:]
                 list_events = []
                 for ans_str in list_answer_strs:
                     event_info = {}
@@ -392,7 +392,6 @@ def process_generated_results(pred_file):
                 # if not answer_str in answer_choices:
                 #     answer_str = "后者是前者的语义父集或语义毫无关联"
 
-
                 structured_output[task_dataset].append(
                     {
                         "sample_id": sample_id_,
@@ -405,7 +404,6 @@ def process_generated_results(pred_file):
                 answer_str = gen_output.strip()
                 # if not answer_str in answer_choices:
                 #     answer_str = "完全不匹配"
-
 
                 structured_output[task_dataset].append(
                     {
@@ -532,7 +530,7 @@ def process_generated_results(pred_file):
                 ]
                 answer_dict = {}
                 for key in keys:
-                    for line in gen_output.strip().split("\n")[1: ]:
+                    for line in gen_output.strip().split("\n")[1:]:
                         # print("line: ", line)
                         if not line.startswith(key):
                             continue
@@ -570,7 +568,6 @@ def process_generated_results(pred_file):
 
                 raise ValueError
 
-
     return structured_output
 
 
@@ -584,12 +581,9 @@ if __name__ == "__main__":
     for key in structured_outputs.keys():
         print(key, len(structured_outputs[key]))
 
-
     json.dump(
         structured_outputs,
         open(to_dir, "w", encoding="utf-8"),
         ensure_ascii=False,
         indent=2
     )
-
-

@@ -11,7 +11,6 @@ basic_tokenizer = BasicTokenizer(tokenize_chinese_chars=True)
 
 def calc_info_extract_task_scores(list_structured_golden,
                                   list_structured_predict):
-
     assert len(list_structured_golden) == len(list_structured_predict)
 
     tp = 0
@@ -29,7 +28,7 @@ def calc_info_extract_task_scores(list_structured_golden,
         for inst in answer_golden:
             assert isinstance(inst, dict)
             keys = sorted(list(inst.keys()))
-            inst = tuple([json.dumps(inst[w], ensure_ascii=False) for w in keys ])
+            inst = tuple([json.dumps(inst[w], ensure_ascii=False) for w in keys])
             # inst = list(inst.items())
             # inst.sort()
             # inst = tuple(inst)
@@ -118,8 +117,6 @@ def calc_cls_task_scores(list_structured_golden,
 
 
 def calc_nlg_task_scores(list_structured_golden, list_structured_predict):
-
-
     assert len(list_structured_golden) == len(list_structured_predict)
 
     scores = []
@@ -162,8 +159,6 @@ def calc_nlg_task_scores(list_structured_golden, list_structured_predict):
 
 
 def calc_nlg_task_scores_by_sessions(list_structured_golden, list_structured_predict):
-
-
     assert len(list_structured_golden) == len(list_structured_predict)
 
     scores = []
@@ -214,8 +209,7 @@ def calc_nlg_task_scores_by_sessions(list_structured_golden, list_structured_pre
 
 
 def calc_text2dt_task_scores(list_structured_golden,
-                         list_structured_predict,):
-
+                             list_structured_predict, ):
     assert len(list_structured_golden) == len(list_structured_predict)
 
     gold_tree_num, correct_tree_num = 0.000001, 0.000001
@@ -254,12 +248,11 @@ def calc_text2dt_task_scores(list_structured_golden,
 
     tree_acc = correct_tree_num / gold_tree_num
     triplet_f1 = 2 * (correct_triplet_num / predict_triplet_num) * (correct_triplet_num / gold_triplet_num) / (
-                correct_triplet_num / predict_triplet_num + correct_triplet_num / gold_triplet_num)
+            correct_triplet_num / predict_triplet_num + correct_triplet_num / gold_triplet_num)
     path_f1 = 2 * (correct_path_num / predict_path_num) * (correct_path_num / gold_path_num) / (
-                correct_path_num / predict_path_num + correct_path_num / gold_path_num)
+            correct_path_num / predict_path_num + correct_path_num / gold_path_num)
     tree_lenv_radio = 1 - edit_dis / max_edit_dis
     node_f1 = 2 * (correct_node_num / predict_node_num) * (correct_node_num / gold_node_num) / (
-                correct_node_num / predict_node_num + correct_node_num / gold_node_num)
+            correct_node_num / predict_node_num + correct_node_num / gold_node_num)
 
     return tree_lenv_radio, node_f1, path_f1
-
