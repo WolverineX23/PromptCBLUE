@@ -2,7 +2,7 @@
 Usage: 
 python medical_prompts/src/ft_llama_lora/merge_llama_with_chinese_lora.py \
     --base_model ./models--decapoda-research--llama-7b-hf/snapshots/5f98eefcc80e437ef68d457ad7bf167c2c6a1348 \
-    --lora_model ./models--ziqingyang--chinese-llama-plus-lora-7b/snapshots/32115d9a87767a8e00464dc560030a12bf38cb24,./models--ziqingyang--chinese-alpaca-plus-lora-7b/snapshots/8f4c20016de3c4c9a6fb47bc7082583849a37285 \
+    --lora_model ./models--ziqingyang--chinese-llama-plus-lora-7b/snapshots/32115d9a87767a8e00464dc560030a12bf38cb24, ./models--ziqingyang--chinese-alpaca-plus-lora-7b/snapshots/8f4c20016de3c4c9a6fb47bc7082583849a37285 \
     --output_type huggingface \
     --output_dir ./resources/chinese-llama-alpaca-plus-lora-7b
 """
@@ -153,7 +153,6 @@ def save_shards(model_sd, num_shards: int):
                         print(f"Processing {new_k}")
                         splits = [v] * num_shards
 
-
                     elif 'w1.weight' in new_k:
                         print(f"Processing {new_k}")
                         splits = v.split(v.size(0) // num_shards, dim=0)
@@ -163,7 +162,6 @@ def save_shards(model_sd, num_shards: int):
                     elif 'w3.weight' in new_k:
                         print(f"Processing {new_k}")
                         splits = v.split(v.size(0) // num_shards, dim=0)
-
 
                     elif 'wo.weight' in new_k:
                         print(f"Processing {new_k}")
@@ -230,7 +228,7 @@ if __name__ == '__main__':
         )
     print(base_model)
 
-    ## infer the model size from the checkpoint
+    # infer the model size from the checkpoint
     embedding_size = base_model.get_input_embeddings().weight.size(1)
     model_size = emb_to_model_size[embedding_size]
     print(f"Peft version: {peft.__version__}")
