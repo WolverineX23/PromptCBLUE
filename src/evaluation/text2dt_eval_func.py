@@ -92,7 +92,7 @@ def is_tree_equal(predict_tree, gold_tree):
     return 1
 
 
-# 计算模型预测的诊疗决策树和ground turth的距离，距离越小表示两树越相似，为计算编辑比率做准备
+# 计算模型预测的诊疗决策树和ground truth的距离，距离越小表示两树越相似，为计算编辑比率做准备
 def edit_distance(predict_tree, gold_tree, predict_matrix, gold_matrix):
     dis = 0
     stack1 = [0]

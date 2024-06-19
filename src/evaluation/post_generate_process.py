@@ -1,14 +1,11 @@
 # coding=utf-8
-# Created by Michael Zhu
-# ECNU, 2023
-
 import json
 import sys
-
 
 # from tqdm import tqdm
 
 
+# 将 test_predictions.json 文件转化为 results.json 文件
 def process_generated_results(pred_file):
     structured_output = {
         "CMeEE-V2": [],
@@ -188,7 +185,6 @@ def process_generated_results(pred_file):
                     }
                 )
 
-
             elif task_dataset == "Text2DT":
 
                 list_nodes = []
@@ -247,7 +243,6 @@ def process_generated_results(pred_file):
                         "answer": list_nodes,
                     }
                 )
-
 
             elif task_dataset == "CHIP-CDN":
                 # 答案格式：
